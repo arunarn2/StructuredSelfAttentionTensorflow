@@ -1,0 +1,12 @@
+{
+	
+	"num_epochs":2,
+	"use_regularization":"True",
+	"C":0.03,
+	"clip":"True",
+	"embedding_dim": 300,
+	"attention_hops":30,
+	"learning_rate":1e-3,
+	"classification_type":"multiclass"
+
+}
