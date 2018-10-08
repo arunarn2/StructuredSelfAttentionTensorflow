@@ -11,9 +11,9 @@ Using the pretrained glove embeddings (glove.6B.300d.txt). Download the Glove Em
 3. Model parameters are defined in `model_params.json` and configuration parameters in `config.json`.
 
 ## Requirements:
-Python 3.6
-Tensorflow 1.4.1
-Keras 2.0.8
-numpy 1.9.1
-scipy 0.14
-
+Python 3.6  
+Tensorflow 1.4.1  
+Keras 2.0.8  
+numpy 1.9.1  
+scipy 0.14  
+  
