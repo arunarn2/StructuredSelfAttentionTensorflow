@@ -1,5 +1,6 @@
 # Structured Self Attention - Tensorflow implementation
-This repository contains the Tensorflow implementation for the paper [A Structured Self-Attentive Sentence Embedding](https://arxiv.org/abs/1703.03130) in tensorflow.
+This repository contains the Tensorflow implementation for the paper [A Structured Self-Attentive Sentence Embedding](https://arxiv.org/abs/1703.03130) in tensorflow.  
+![alt text](attention.png]
 
 ## Dataset
 - Binary classification on the IMDB Dataset from Keras   
