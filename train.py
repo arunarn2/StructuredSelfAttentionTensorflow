@@ -247,39 +247,38 @@ def train():
                     path = saver.save(sess, checkpoint_prefix, global_step=step)
                     print("Saved model checkpoint to {}\n".format(path))
 
-        # Get the placeholders from the graph by name
-        input_text = graph.get_operation_by_name("Input/input_text").outputs[0]
+        # # Get the placeholders from the graph by name
+        # input_text = graph.get_operation_by_name("Input/input_text").outputs[0]
+        # attn = graph.get_operation_by_name("SelfAttention/attention").outputs[0]
+        #
+        # # Tensors we want to evaluate
+        # predictions = graph.get_operation_by_name("Output/predictions").outputs[0]
+        # # Generate batches for one epoch
+        # batches = batch_iterator(list(zip(x_eval, x_text)), model_params["batch_size"], 1, shuffle=False)
+        # # Collect the predictions here
+        # all_predictions = []
+        # tokenizer = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z]+(?=[A-Z])|[\'\w\-]+", re.UNICODE)
+        # for batch in batches:
+        #     x_batch, text_batch = zip(*batch)
+        #
+        #     batch_predictions, attention = sess.run([predictions, attn], {input_text: x_batch})
+        #     all_predictions = np.concatenate([all_predictions, batch_predictions])
+        #
+        #     for k in range(len(attention[0])):
+        #         f.write('<p style="margin:10px;">\n')
+        #         ww = tokenizer.findall(text_batch[0])
+        #
+        #         for j in range(len(attention[0][0])):
+        #             alpha = "{:.2f}".format(attention[0][k][j])
+        #             if len(ww) > j:
+        #                 w = ww[j]
+        #             else:
+        #                 break
+        #
+        # correct_predictions = float(sum(all_predictions == y_eval))
+        # print("\nTotal number of test examples: {}".format(len(y_eval)))
+        # print("Accuracy: {:g}\n".format(correct_predictions / float(len(y_eval))))
 
-        attn = graph.get_operation_by_name("SelfAttention/attention").outputs[0]
-
-        # Tensors we want to evaluate
-        predictions = graph.get_operation_by_name("Output/predictions").outputs[0]
-
-        # Generate batches for one epoch
-        batches = batch_iterator(list(zip(x_eval, x_text)), model_params["batch_size"], 1, shuffle=False)
-        # Collect the predictions here
-        all_predictions = []
-        tokenizer = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z]+(?=[A-Z])|[\'\w\-]+", re.UNICODE)
-        for batch in batches:
-            x_batch, text_batch = zip(*batch)
-
-            batch_predictions, attention = sess.run([predictions, attn], {input_text: x_batch})
-            all_predictions = np.concatenate([all_predictions, batch_predictions])
-
-            for k in range(len(attention[0])):
-                f.write('<p style="margin:10px;">\n')
-                ww = tokenizer.findall(text_batch[0])
-
-                for j in range(len(attention[0][0])):
-                    alpha = "{:.2f}".format(attention[0][k][j])
-                    if len(ww) > j:
-                        w = ww[j]
-                    else:
-                        break
-
-        correct_predictions = float(sum(all_predictions == y_eval))
-        print("\nTotal number of test examples: {}".format(len(y_eval)))
-        print("Accuracy: {:g}\n".format(correct_predictions / float(len(y_eval))))
 
 def main(_):
     train()
