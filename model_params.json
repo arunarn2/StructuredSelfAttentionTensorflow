@@ -1,0 +1,10 @@
+{
+
+	"batch_size":512,
+	"vocab_size":20000,
+	"max_sentence_length":250,
+	"lstm_hidden_dimension":50,
+	"d_a":350,
+	"fc":2000
+
+}
