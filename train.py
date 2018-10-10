@@ -4,12 +4,11 @@ import os
 import numpy as np
 import tensorflow as tf
 import time
-import re
 
 from keras.datasets import imdb
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-
+from attention_visualization import createHTML
 from data import batch_iterator, load_data
 from model import StructuredSelfAttention
 
@@ -19,6 +18,21 @@ tf.flags.DEFINE_integer("evaluate_every", 1000, "Evaluate model on dev set after
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps")
 tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store")
 FLAGS = tf.flags.FLAGS
+
+
+def visualize_attention(session, wts, x_test_pad, word_to_id, filename):
+    wts_add = tf.reduce_sum(wts, 1)
+    wts_add_list = wts_add.eval(session=session).tolist()
+    id_to_word = {v: k for k, v in word_to_id.items()}
+    text = []
+    # for test in x_test_pad:
+    #     text.append(" ".join([id_to_word.get(i) for i in test]))
+    for test in x_test_pad:
+        s = [id_to_word.get(i) for i in test]
+        text.append(' '.join(str(e) for e in s))
+    createHTML(text, wts_add_list, filename)
+    print("Attention visualization created for {} samples".format(len(x_test_pad)))
+    return
 
 
 def json_to_dict(json_set):
@@ -43,6 +57,7 @@ model_params = json_to_dict(model_params)
 print("Using parameter settings:", params_set)
 print("Using model settings", model_params)
 INDEX_FROM = 3
+test_idx = 100
 
 
 def get_coefs(word1, *arr):
@@ -56,25 +71,26 @@ def train():
     if classification_type == "multiclass":
         print("Performing multiclass classification on AGNews Dataset")
         x_text, y = load_data("data/ag_news_csv/train.csv")
-        x_eval, y_eval = load_data("data/ag_news_csv/test.csv")
+        x_test1, y_test = load_data("data/ag_news_csv/test.csv")
         x_train1, x_dev1, y_train, y_dev = train_test_split(x_text, y, test_size=0.1)
 
         vocab_processor = tf.contrib.learn.preprocessing.VocabularyProcessor(model_params['max_sentence_length'])
         x_train = np.array(list(vocab_processor.fit_transform(x_train1)))
         x_dev = np.array(list(vocab_processor.transform(x_dev1)))
+        x_test = np.array(list(vocab_processor.transform(x_test1)))
         print("Text Vocabulary Size: {:d}".format(len(vocab_processor.vocabulary_)))
         print("Train Data - X: " + str(x_train.shape) + " Labels: " + str(y_train.shape))
         print("Dev Data - X: " + str(x_dev.shape) + " Labels: " + str(y_dev.shape))
 
         vocab_dictionary = vocab_processor.vocabulary_._mapping
-        sorted_vocab = sorted(vocab_dictionary.items(), key=lambda x: x[1])
+        word_to_id = sorted(vocab_dictionary.items(), key=lambda x: x[1])
         # w2v = word2vec.load_word2vec_format('GoogleNews-vectors-negative300.bin.gz', binary=True)
         # init_embedding = np.random.uniform(-1.0, 1.0, (len(vocab_processor.vocabulary_), params_set["embedding_dim"]))
         # for word, word_idx in sorted_vocab:
         #     if word in w2v:
         #         init_embedding[word_idx] = w2v[word]
         # print("Successfully loaded the pre-trained word2vec model!\n")
-        del (x_train1, x_dev1)
+        del (x_train1, x_dev1, x_test1)
 
         glove_dir = "/home/raj/Desktop/Aruna/glove.6B"
         embeddings_index = {}
@@ -90,7 +106,7 @@ def train():
 
         # building Hierachical Attention network
         init_embedding = np.random.random((len(vocab_processor.vocabulary_) + 1, params_set["embedding_dim"]))
-        for word, i in sorted_vocab:
+        for word, i in word_to_id:
             embedding_vector = embeddings_index.get(word)
             if embedding_vector is not None:
                 # words not found in embedding index will be all-zeros.
@@ -247,37 +263,14 @@ def train():
                     path = saver.save(sess, checkpoint_prefix, global_step=step)
                     print("Saved model checkpoint to {}\n".format(path))
 
-        # # Get the placeholders from the graph by name
-        # input_text = graph.get_operation_by_name("Input/input_text").outputs[0]
-        # attn = graph.get_operation_by_name("SelfAttention/attention").outputs[0]
-        #
-        # # Tensors we want to evaluate
-        # predictions = graph.get_operation_by_name("Output/predictions").outputs[0]
-        # # Generate batches for one epoch
-        # batches = batch_iterator(list(zip(x_eval, x_text)), model_params["batch_size"], 1, shuffle=False)
-        # # Collect the predictions here
-        # all_predictions = []
-        # tokenizer = re.compile(r"[A-Z]{2,}(?![a-z])|[A-Z][a-z]+(?=[A-Z])|[\'\w\-]+", re.UNICODE)
-        # for batch in batches:
-        #     x_batch, text_batch = zip(*batch)
-        #
-        #     batch_predictions, attention = sess.run([predictions, attn], {input_text: x_batch})
-        #     all_predictions = np.concatenate([all_predictions, batch_predictions])
-        #
-        #     for k in range(len(attention[0])):
-        #         f.write('<p style="margin:10px;">\n')
-        #         ww = tokenizer.findall(text_batch[0])
-        #
-        #         for j in range(len(attention[0][0])):
-        #             alpha = "{:.2f}".format(attention[0][k][j])
-        #             if len(ww) > j:
-        #                 w = ww[j]
-        #             else:
-        #                 break
-        #
-        # correct_predictions = float(sum(all_predictions == y_eval))
-        # print("\nTotal number of test examples: {}".format(len(y_eval)))
-        # print("Accuracy: {:g}\n".format(correct_predictions / float(len(y_eval))))
+        # Evaluate trained model on test data
+        attn_wts, acc, loss = sess.run([model.A, model.accuracy, model.loss],
+                                       feed_dict={model.input_text: x_test[:test_idx],
+                                                  model.input_y: y_test[:test_idx]})
+
+        visualize_attention(sess, attn_wts, x_test[:test_idx], dict(word_to_id), filename='attention.html')
+        print("Test Accuracy: {:g}".format(acc))
+        print("Test Loss: {:g}\n".format(loss))
 
 
 def main(_):
