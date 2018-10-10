@@ -24,3 +24,5 @@ Using the pretrained glove embeddings (glove.6B.300d.txt). Download the Glove Em
 ```
 python train.py
 ```
+## Results
+Test Accuracy: 89.3%
