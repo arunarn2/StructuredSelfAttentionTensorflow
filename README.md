@@ -26,3 +26,5 @@ python train.py
 ```
 ## Results
 Test Accuracy: 89.3%
+
+![Self-Attention Model](visualization.png)
